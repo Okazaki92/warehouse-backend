@@ -13,11 +13,48 @@ datasource db {
   provider = "postgresql"
 }
 
-model Product {
+
+model User{
   id String @id @default(uuid())
+  email String @unique
+  password String 
   name String
-  quantity Int 
-  unit String
-  price Float
-  discount Float
+}
+
+model Product {
+  id        String   @id @default(uuid())
+  name      String
+  unit      String
+  quantity  Float   @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Invoice {
+  id        String   @id @default(uuid())
+  type      InvoiceType
+  createdAt DateTime @default(now())
+  items     InvoiceItem[]
+}
+
+model InvoiceItem {
+  id        String   @id @default(uuid())
+  invoiceId String
+  name      String
+  quantity  Float   @default(0)
+  unit      String
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+model StockMovement {
+  id        String   @id @default(uuid())
+  productId String
+  quantity  Float
+  source    String
+  createdAt DateTime @default(now())
+}
+
+enum InvoiceType {
+  PURCHASE
+  SALE
 }

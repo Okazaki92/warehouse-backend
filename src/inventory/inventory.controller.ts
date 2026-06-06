@@ -3,7 +3,10 @@ import { InventoryService } from './inventory.service';
 import { AdjustInventoryDto } from './dto/adjust-inventory.dto';
 import { TransferInventoryDto } from './dto/transfer-inventory.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Inventory')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('inventory')
 export class InventoryController {

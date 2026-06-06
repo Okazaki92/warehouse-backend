@@ -12,7 +12,10 @@ import { WarehousesService } from './warehouses.service';
 import { CreateWarehouseDto } from './dto/create-warehouse.dto';
 import { UpdateWarehouseDto } from './dto/update-warehouse.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Warehouses')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('warehouses')
 export class WarehousesController {

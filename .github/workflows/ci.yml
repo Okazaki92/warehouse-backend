@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: warehouse_user
+          POSTGRES_PASSWORD: warehouse_pass
+          POSTGRES_DB: warehouse_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://warehouse_user:warehouse_pass@localhost:5432/warehouse_db
+
+      - name: Run migrations
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://warehouse_user:warehouse_pass@localhost:5432/warehouse_db
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://warehouse_user:warehouse_pass@localhost:5432/warehouse_db
+          JWT_SECRET: test-secret-key
+          JWT_EXPIRES_IN: 7d
+
+      - name: Build Docker image
+        run: docker build -t warehouse-api .

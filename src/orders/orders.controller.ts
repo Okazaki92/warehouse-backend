@@ -8,12 +8,14 @@ import {
   Body,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { QueryOrderDto } from './dto/query-order.dto';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
@@ -23,8 +25,8 @@ export class OrdersController {
   constructor(private ordersService: OrdersService) {}
 
   @Get()
-  findAll() {
-    return this.ordersService.findAll();
+  findAll(@Query() query: QueryOrderDto) {
+    return this.ordersService.findAll(query);
   }
 
   @Get(':id')

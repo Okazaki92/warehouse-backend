@@ -6,15 +6,41 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { QueryProductDto } from './dto/query-product.dto';
+import { paginate, PaginatedResult } from '../common/helpers/paginate.helper';
+import type { Prisma } from '../generated/prisma/client';
 
 @Injectable()
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    return this.prisma.product.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(query: QueryProductDto): Promise<PaginatedResult<any>> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ProductWhereInput = {};
+    if (query.search) {
+      where.OR = [
+        { name: { contains: query.search, mode: 'insensitive' } },
+        { sku: { contains: query.search, mode: 'insensitive' } },
+      ];
+    }
+    if (query.category) {
+      where.category = query.category;
+    }
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.product.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return paginate(items, total, page, limit);
   }
 
   async findOne(id: string) {

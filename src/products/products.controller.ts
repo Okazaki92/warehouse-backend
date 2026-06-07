@@ -7,12 +7,14 @@ import {
   Param,
   Body,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { QueryProductDto } from './dto/query-product.dto';
 
 @ApiTags('Products')
 @ApiBearerAuth()
@@ -22,8 +24,8 @@ export class ProductsController {
   constructor(private productsService: ProductsService) {}
 
   @Get()
-  findAll() {
-    return this.productsService.findAll();
+  findAll(@Query() query: QueryProductDto) {
+    return this.productsService.findAll(query);
   }
 
   @Get(':id')

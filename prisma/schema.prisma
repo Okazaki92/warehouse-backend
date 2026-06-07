@@ -71,6 +71,7 @@ model Warehouse {
   updatedAt DateTime @updatedAt
 
   inventory InventoryItem[]
+  orders    Order[]
 }
 
 model InventoryItem {
@@ -96,8 +97,12 @@ model Order {
 
   createdBy   User     @relation(fields: [createdById], references: [id])
   createdById String
+
   supplier    Supplier? @relation(fields: [supplierId], references: [id])
   supplierId  String?
+
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId String
 
   items OrderItem[]
 }

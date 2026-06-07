@@ -7,12 +7,14 @@ import {
   Param,
   Body,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { WarehousesService } from './warehouses.service';
 import { CreateWarehouseDto } from './dto/create-warehouse.dto';
 import { UpdateWarehouseDto } from './dto/update-warehouse.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { QueryWarehouseDto } from './dto/query-warehouse.dto';
 
 @ApiTags('Warehouses')
 @ApiBearerAuth()
@@ -22,8 +24,8 @@ export class WarehousesController {
   constructor(private warehousesService: WarehousesService) {}
 
   @Get()
-  findAll() {
-    return this.warehousesService.findAll();
+  findAll(@Query() query: QueryWarehouseDto) {
+    return this.warehousesService.findAll(query);
   }
 
   @Get(':id')

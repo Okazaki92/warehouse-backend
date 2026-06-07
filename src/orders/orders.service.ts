@@ -6,30 +6,55 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import { OrderStatus, OrderType } from '../generated/prisma/client';
-
+import {
+  OrderStatus,
+  OrderType,
+  type Prisma,
+} from '../generated/prisma/client';
+import { QueryOrderDto } from './dto/query-order.dto';
+import { paginate, PaginatedResult } from '../common/helpers/paginate.helper';
 
 @Injectable()
 export class OrdersService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    return this.prisma.order.findMany({
-      include: {
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-        supplier: { select: { id: true, name: true } },
-        items: {
-          include: {
-            product: {
-              select: { id: true, name: true, sku: true, unit: true },
+  async findAll(query: QueryOrderDto): Promise<PaginatedResult<any>> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.OrderWhereInput = {};
+    if (query.status) {
+      where.status = query.status;
+    }
+    if (query.type) {
+      where.type = query.type;
+    }
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.order.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          createdBy: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+          supplier: { select: { id: true, name: true } },
+          items: {
+            include: {
+              product: {
+                select: { id: true, name: true, sku: true, unit: true },
+              },
             },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return paginate(items, total, page, limit);
   }
 
   async findOne(id: string) {
@@ -67,6 +92,7 @@ export class OrdersService {
         notes: dto.notes,
         createdById: userId,
         supplierId: dto.supplierId,
+        warehouseId: dto.warehouseId,
         items: {
           create: dto.items.map((item) => ({
             productId: item.productId,
@@ -116,12 +142,11 @@ export class OrdersService {
     const isInbound = order.type === OrderType.INBOUND;
 
     const operations = order.items.map((item) => {
-      const warehouseId = (order as any).warehouseId as string;
       return this.prisma.inventoryItem.upsert({
         where: {
           productId_warehouseId: {
             productId: item.product.id,
-            warehouseId,
+            warehouseId: order.warehouseId,
           },
         },
         update: {
@@ -131,7 +156,7 @@ export class OrdersService {
         },
         create: {
           productId: item.product.id,
-          warehouseId,
+          warehouseId: order.warehouseId,
           quantity: isInbound ? item.quantity : 0,
         },
       });

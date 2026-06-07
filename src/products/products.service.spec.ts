@@ -10,7 +10,9 @@ const mockPrismaService = {
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    count: jest.fn(),
   },
+  $transaction: jest.fn((queries) => Promise.all(queries)),
 };
 
 describe('ProductsService', () => {
@@ -29,13 +31,14 @@ describe('ProductsService', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of products', async () => {
+    it('should return paginated products', async () => {
       const mockProducts = [{ id: '1', name: 'Laptop', sku: 'LAP-001' }];
       mockPrismaService.product.findMany.mockResolvedValue(mockProducts);
 
-      const result = await productsService.findAll();
+      const query = { page: 1, limit: 10 };
+      const result = await productsService.findAll(query);
 
-      expect(result).toEqual(mockProducts);
+      expect(result.data).toEqual(mockProducts);
       expect(mockPrismaService.product.findMany).toHaveBeenCalled();
     });
   });
